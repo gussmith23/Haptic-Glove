@@ -2,7 +2,7 @@
 #include "../streaming_lib/CAPIStreamClient/SocketData/SocketData.hpp"
 #include "../streaming_lib/CAPIStreamClient/CAPIStreamClient.hpp"
 #include "get_frame.hpp"
-#include "mraa.hpp"					// For motor control.
+//#include "mraa.hpp"					// For motor control.
 
 #include <stdio.h>
 #include <errno.h>
@@ -24,21 +24,22 @@ typedef enum{
 
 // Connection fields
 CAPINetworkUtility *myClient;
-char* addr = "192.168.82.112";
+char* addr = "192.168.82.186";
 const uint32_t port = 2275;
 
 // The height and width of the current frame.
-const uint32_t HEIGHT = 600, WIDTH = 800;
+const uint32_t HEIGHT = 480, WIDTH = 640;
 const uint32_t HALF_HEIGHT = HEIGHT/2, HALF_WIDTH = WIDTH/2;
 const float SLOPE = (float) HEIGHT/ (float) WIDTH;
 
 
 // mraa fields.
+/*
 mraa::Gpio *left, *right, *up, *down;
 const uint32_t LEFT_PIN = 31,   //GP44
 								RIGHT_PIN = 45,	//GP45
 								UP_PIN = 32,		//GP46
-								DOWN_PIN = 46;	//GP47
+								DOWN_PIN = 46;	//GP47*/
 
 
 /////////////////////////
@@ -58,11 +59,11 @@ int main()
 	signal(SIGINT, sig_handler);
 	
 	// Set up mraa.
-	printf("Initializing connection to motors...\n");
-	mraa_init();
+	//printf("Initializing connection to motors...\n");
+	//mraa_init();
 	
 	// Init.
-	left = new mraa::Gpio(LEFT_PIN);
+	/*left = new mraa::Gpio(LEFT_PIN);
 	right = new mraa::Gpio(RIGHT_PIN);
 	up = new mraa::Gpio(UP_PIN);
 	down = new mraa::Gpio(DOWN_PIN);
@@ -94,7 +95,7 @@ int main()
 		vibrate_motor(UP);
 	}
 	// END DEBUG
-	
+	*/
 	
 	// Set up connection.
 	
@@ -226,7 +227,7 @@ uint8_t process_return_packet(SocketData* socketData)
 }
 
 uint8_t vibrate_motor(Direction direction)
-{
+{/*
 	
 	switch(direction)
 	{
@@ -254,7 +255,7 @@ uint8_t vibrate_motor(Direction direction)
 	
 	//test
 	sleep(1);
-	
+	*/
 	return 0;
 }
 
