@@ -1,6 +1,8 @@
-#include "CAPINetworkUtility.hpp"
-#include "SocketData.hpp"
+#include "../streaming_lib/Common/network/include/capi_network_utility.h"
+#include "../streaming_lib/Client/include/CAPIStreamClient.hpp"
+#include "get_frame.hpp"
 
+#include <stdio.h>
 #include <cstdint>
 
 /////////////////////////
@@ -17,18 +19,18 @@ typedef enum{
 
 // Connection fields
 CAPIStreamClient *myClient;
-char* inet_addr = "192.168.1.3";
+char* addr = "192.168.1.3";
 
 // The height and width of the current frame.
-const uint32_t HEIGHT = 720, WIDTH = 1280;
+const uint32_t HEIGHT = 544, WIDTH = 960;
 const uint32_t HALF_HEIGHT = HEIGHT/2, HALF_WIDTH = WIDTH/2;
 const float SLOPE = (float) HEIGHT/ (float) WIDTH;
 
 
 /////////////////////////
 // Function prototypes
-int process_return_packet(SocketData* socketData);
-int vibrate_motor (Direction direction);
+uint8_t process_return_packet(SocketData* socketData);
+uint8_t vibrate_motor(Direction direction);
 
 
 int main()
@@ -38,16 +40,25 @@ int main()
 	// Step 0: Setup.
 	
 	// Set up connection.
+	/*
 	myClient = new CAPIStreamClient();
-	int err = myClient->connect(, 1000);
+	int err = myClient->connect(addr, 1000);
 	if(err != 0){
 		fprintf(stderr, "Failed to connect to server.")
-	}	
+	}	*/
 	
 	// Set up webcam.
+	uint8_t* buffer;
+	if (get_frame_init(HEIGHT, WIDTH, &buffer) != 0)
+	{
+		fprintf(stderr,"get_frame_init failed.\n");
+		return -1;
+	}
 	
 	////////////////////////
 	// Step 1: Get frame data from webcam.
+	
+	get_frame();
 	
 	////////////////////////
 	// Step 2: Send frame data.
@@ -58,6 +69,17 @@ int main()
 	////////////////////////
 	// Step 4: Send to GPIO.
 	
+	
+	
+	////////////////////////
+	// Close.
+		if (get_frame_close() != 0)
+	{
+		fprintf(stderr,"get_frame_close failed.\n");
+		return -1;
+	}
+	
+	return 0;
 }
 
 /**
@@ -77,7 +99,7 @@ int main()
  * |/____DN___\|
  * 
  */
-int process_return_packet(SocketData* socketData)
+uint8_t process_return_packet(SocketData* socketData)
 {
 
 	/////////////////////
@@ -94,8 +116,8 @@ int process_return_packet(SocketData* socketData)
 	// Check if it's above the midlines.
 	uint8_t above_bottom_left_to_top_right = 0;
 	uint8_t above_top_left_to_bottom_right = 0;
-	if (y > x*slope) above_bottom_left_to_top_right = 1;		
-	if (y > (WIDTH-x)*slope) above_top_left_to_bottom_right = 1;
+	if (y > x*SLOPE) above_bottom_left_to_top_right = 1;		
+	if (y > (WIDTH-x)*SLOPE) above_top_left_to_bottom_right = 1;
 	
 	// Now break into cases:
 	if (above_bottom_left_to_top_right && above_top_left_to_bottom_right)
@@ -111,4 +133,9 @@ int process_return_packet(SocketData* socketData)
 	// Step 3: vibrate motor.
 	return vibrate_motor(direction);
 	
+}
+
+uint8_t vibrate_motor(Direction direction)
+{
+	return 0;
 }
