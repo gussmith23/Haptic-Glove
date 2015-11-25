@@ -1,4 +1,5 @@
-#include "../streaming_lib/Common/network/include/capi_network_utility.h"
+#include "../streaming_lib/Common/network/include/CAPINetworkUtility.hpp"
+#include "../streaming_lib/Common/network/include/SocketData.hpp"
 #include "../streaming_lib/Client/include/CAPIStreamClient.hpp"
 #include "get_frame.hpp"
 
@@ -19,7 +20,8 @@ typedef enum{
 
 // Connection fields
 CAPIStreamClient *myClient;
-char* addr = "192.168.1.3";
+char* addr = "192.168.1.228";
+const uint32_t port = 2275;
 
 // The height and width of the current frame.
 const uint32_t HEIGHT = 544, WIDTH = 960;
@@ -40,12 +42,13 @@ int main()
 	// Step 0: Setup.
 	
 	// Set up connection.
-	/*
+	
 	myClient = new CAPIStreamClient();
-	int err = myClient->connect(addr, 1000);
+	int err = myClient->connect(addr, port);
 	if(err != 0){
-		fprintf(stderr, "Failed to connect to server.")
-	}	*/
+		fprintf(stderr, "Failed to connect to server.");
+		return -1;
+	}	
 	
 	// Set up webcam.
 	uint8_t* buffer;
@@ -62,6 +65,8 @@ int main()
 	
 	////////////////////////
 	// Step 2: Send frame data.
+	
+	
 	
 	////////////////////////
 	// Step 3: Receive response.
