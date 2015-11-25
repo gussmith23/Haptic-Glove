@@ -16,7 +16,7 @@
  */
 
 int fd;
-const unsigned int PIX_FORMAT = V4L2_PIX_FMT_MJPEG;
+const unsigned int PIX_FORMAT = V4L2_PIX_FMT_M420;
 struct v4l2_buffer bufferinfo;
 uint8_t* buffer;
 

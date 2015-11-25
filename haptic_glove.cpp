@@ -24,7 +24,7 @@ char* addr = "192.168.1.228";
 const uint32_t port = 2275;
 
 // The height and width of the current frame.
-const uint32_t HEIGHT = 544, WIDTH = 960;
+const uint32_t HEIGHT = 120, WIDTH = 160;
 const uint32_t HALF_HEIGHT = HEIGHT/2, HALF_WIDTH = WIDTH/2;
 const float SLOPE = (float) HEIGHT/ (float) WIDTH;
 
@@ -42,6 +42,8 @@ int main()
 	// Step 0: Setup.
 	
 	// Set up connection.
+	
+	printf("Connecting to %s:%d.\n", addr, port);
 	
 	myClient = new CAPIStreamClient();
 	int err = myClient->connect(addr, port);
@@ -61,6 +63,8 @@ int main()
 	////////////////////////
 	// Step 1: Get frame data from webcam.
 	
+	printf("Getting frame from webcam.\n");
+	
 	get_frame();
 	
 	////////////////////////
@@ -73,8 +77,9 @@ int main()
 		return -1;
 	}
 	
-	SocketData * myPacket = new SocketData(VIDEO_FRAME, 0, 0, 0, buffer_size, buffer);
-	//myClient->sendPacket(myPacket);
+	printf("Sending packet of length %d.\n", buffer_size);	
+	SocketData * myPacket = new SocketData(VIDEO_FRAME, 0, 0, 0, 0, buffer);
+	myClient->sendPacket(myPacket);
 	
 	////////////////////////
 	// Step 3: Receive response.
@@ -86,6 +91,9 @@ int main()
 	
 	////////////////////////
 	// Close.
+	
+	printf("Closing webcam.\n");
+	
 		if (get_frame_close() != 0)
 	{
 		fprintf(stderr,"get_frame_close failed.\n");
