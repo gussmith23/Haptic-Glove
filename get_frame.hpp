@@ -3,6 +3,7 @@
 
 uint8_t get_frame_init(uint16_t height, uint16_t width, uint8_t** data);
 uint8_t get_frame_close();
+uint32_t get_buffer_size();
 uint8_t get_frame();
 
 #endif
