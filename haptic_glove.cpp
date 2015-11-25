@@ -66,7 +66,15 @@ int main()
 	////////////////////////
 	// Step 2: Send frame data.
 	
+	uint32_t buffer_size = get_buffer_size();
+	if (buffer_size == 0)
+	{
+		fprintf(stderr, "buffer size is zero! no data to send!");
+		return -1;
+	}
 	
+	SocketData * myPacket = new SocketData(VIDEO_FRAME, 0, 0, 0, buffer_size, buffer);
+	//myClient->sendPacket(myPacket);
 	
 	////////////////////////
 	// Step 3: Receive response.

@@ -17,7 +17,7 @@
 
 int fd;
 const unsigned int PIX_FORMAT = V4L2_PIX_FMT_MJPEG;
-struct v4l2_buffer bufferinfo = NULL;
+struct v4l2_buffer bufferinfo;
 uint8_t* buffer;
 
 
@@ -123,8 +123,7 @@ uint8_t get_frame_close()
 
 uint32_t get_buffer_size()
 {
-	if (bufferinfo == NULL) return 0;
-	else return bufferinfo.length;
+	return bufferinfo.length;
 }
 
 uint8_t get_frame() 
