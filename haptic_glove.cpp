@@ -1,10 +1,14 @@
-#include "../streaming_lib/Common/network/include/CAPINetworkUtility.hpp"
-#include "../streaming_lib/Common/network/include/SocketData.hpp"
-#include "../streaming_lib/Client/include/CAPIStreamClient.hpp"
+#include "../streaming_lib/CAPIStreamClient/CAPINetworkUtility/CAPINetworkUtility.hpp"
+#include "../streaming_lib/CAPIStreamClient/SocketData/SocketData.hpp"
+#include "../streaming_lib/CAPIStreamClient/CAPIStreamClient.hpp"
 #include "get_frame.hpp"
+#include "mraa.hpp"					// For motor control.
 
 #include <stdio.h>
+#include <errno.h>
+#include <signal.h>
 #include <cstdint>
+#include <unistd.h> 			// sleep.
 
 /////////////////////////
 // Enums
@@ -19,20 +23,29 @@ typedef enum{
 // Fields
 
 // Connection fields
-CAPIStreamClient *myClient;
-char* addr = "192.168.1.228";
+CAPINetworkUtility *myClient;
+char* addr = "192.168.82.112";
 const uint32_t port = 2275;
 
 // The height and width of the current frame.
-const uint32_t HEIGHT = 120, WIDTH = 160;
+const uint32_t HEIGHT = 600, WIDTH = 800;
 const uint32_t HALF_HEIGHT = HEIGHT/2, HALF_WIDTH = WIDTH/2;
 const float SLOPE = (float) HEIGHT/ (float) WIDTH;
+
+
+// mraa fields.
+mraa::Gpio *left, *right, *up, *down;
+const uint32_t LEFT_PIN = 31,   //GP44
+								RIGHT_PIN = 45,	//GP45
+								UP_PIN = 32,		//GP46
+								DOWN_PIN = 46;	//GP47
 
 
 /////////////////////////
 // Function prototypes
 uint8_t process_return_packet(SocketData* socketData);
 uint8_t vibrate_motor(Direction direction);
+void sig_handler(int signo);
 
 
 int main()
@@ -41,12 +54,54 @@ int main()
 	////////////////////////
 	// Step 0: Setup.
 	
+	// Set sig handler.
+	signal(SIGINT, sig_handler);
+	
+	// Set up mraa.
+	printf("Initializing connection to motors...\n");
+	mraa_init();
+	
+	// Init.
+	left = new mraa::Gpio(LEFT_PIN);
+	right = new mraa::Gpio(RIGHT_PIN);
+	up = new mraa::Gpio(UP_PIN);
+	down = new mraa::Gpio(DOWN_PIN);
+	if (left == NULL || right == NULL || up == NULL || down == NULL)
+	{
+		fprintf(stderr, "Error initializing connection to motors.\n");
+		return -1;
+	}
+	
+	// Set to output.
+	mraa::Result l = mraa::SUCCESS,
+								r = mraa::SUCCESS,
+								u = mraa::SUCCESS,
+								d = mraa::SUCCESS;
+							
+	l = left->dir(mraa::DIR_OUT);
+	r = right->dir(mraa::DIR_OUT);
+	u = up->dir(mraa::DIR_OUT);
+	d = down->dir(mraa::DIR_OUT);
+	if (l != mraa::SUCCESS || r != mraa::SUCCESS || u != mraa::SUCCESS || d != mraa::SUCCESS)
+	{
+		fprintf(stderr, "Error setting gpio direction.\n");
+		return -1;
+	}
+	
+	// TEST DEBUG TEST
+	while(true)
+	{
+		vibrate_motor(UP);
+	}
+	// END DEBUG
+	
+	
 	// Set up connection.
 	
 	printf("Connecting to %s:%d.\n", addr, port);
 	
-	myClient = new CAPIStreamClient();
-	int err = myClient->connect(addr, port);
+	myClient = new CAPINetworkUtility();
+	int err = myClient->openSocket(addr, port);
 	if(err != 0){
 		fprintf(stderr, "Failed to connect to server.");
 		return -1;
@@ -60,29 +115,43 @@ int main()
 		return -1;
 	}
 	
-	////////////////////////
-	// Step 1: Get frame data from webcam.
-	
-	printf("Getting frame from webcam.\n");
-	
-	get_frame();
-	
-	////////////////////////
-	// Step 2: Send frame data.
-	
-	uint32_t buffer_size = get_buffer_size();
-	if (buffer_size == 0)
+	while(true)
 	{
-		fprintf(stderr, "buffer size is zero! no data to send!");
-		return -1;
+		////////////////////////
+		// Step 1: Get frame data from webcam.
+		
+		printf("Getting frame from webcam.\n");
+		
+		get_frame();
+		
+		////////////////////////
+		// Step 2: Send frame data.
+		
+		uint32_t buffer_size = get_buffer_size();
+		if (buffer_size == 0)
+		{
+			fprintf(stderr, "buffer size is zero! no data to send!");
+			return -1;
+		}
+		
+		printf("Sending packet of length %d.\n", buffer_size);	
+		
+		// Create new packet.
+		SocketData * myPacket = new SocketData(VIDEO_FRAME, 0, 0, 0, 0, NULL);
+		
+		// Copy data into packet
+		myPacket->data = (uint8_t *)malloc(buffer_size);
+		memcpy(myPacket->data, buffer, buffer_size);
+		myPacket->message_length = buffer_size;
+		
+		myClient->sendDataPacket(myPacket);
+		
+		
+		////////////////////////
+		// Step 3: Receive response.
 	}
 	
-	printf("Sending packet of length %d.\n", buffer_size);	
-	SocketData * myPacket = new SocketData(VIDEO_FRAME, 0, 0, 0, 0, buffer);
-	myClient->sendPacket(myPacket);
 	
-	////////////////////////
-	// Step 3: Receive response.
 	
 	////////////////////////
 	// Step 4: Send to GPIO.
@@ -158,5 +227,42 @@ uint8_t process_return_packet(SocketData* socketData)
 
 uint8_t vibrate_motor(Direction direction)
 {
+	
+	switch(direction)
+	{
+		case UP:
+			up->write(1);
+			sleep(1);
+			up->write(0);
+			break;
+		case DOWN:
+			down->write(1);
+			sleep(1);
+			down->write(0);
+			break;
+		case LEFT:
+			left->write(1);
+			sleep(1);
+			left->write(0);
+			break;
+		case RIGHT:
+			right->write(1);
+			sleep(1);
+			right->write(0);
+			break;
+	}
+	
+	//test
+	sleep(1);
+	
 	return 0;
+}
+
+void sig_handler(int signo)
+{
+	if (signo == SIGINT)
+	{
+		get_frame_close();
+		exit(0);
+	}
 }
